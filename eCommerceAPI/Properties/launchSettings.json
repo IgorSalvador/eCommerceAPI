@@ -1,0 +1,32 @@
+{
+  "profiles": {
+    "eCommerceAPI": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "swagger",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "https://localhost:7153;http://localhost:5008"
+    },
+    "IIS Express": {
+      "commandName": "IISExpress",
+      "workingDirectory": "C:\\Users\\igors\\Documents\\GitHub\\eCommerceAPI\\eCommerceAPI",
+      "launchBrowser": true,
+      "launchUrl": "swagger",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  },
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "iisSettings": {
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true,
+    "iisExpress": {
+      "applicationUrl": "http://localhost:7169",
+      "sslPort": 44382
+    }
+  }
+}
