@@ -1,6 +1,7 @@
 ﻿using eCommerceAPI.Models;
 using System.Data;
 using System.Data.SqlClient;
+using Dapper;
 
 namespace eCommerceAPI.Repositories
 {
@@ -15,12 +16,12 @@ namespace eCommerceAPI.Repositories
 
         public List<Usuario> Get()
         {
-            return _db;
+            return _connection.Query<Usuario>("SELECT * FROM Usuarios").ToList();
         }
 
         public Usuario Get(int id)
         {
-            return _db.FirstOrDefault(u => u.Id == id);
+            return _connection.QueryFirstOrDefault<Usuario>("SELECT * FROM Usuarios where Id = @Id", new {Id = id});
         }
 
         public void Insert(Usuario usuario)
