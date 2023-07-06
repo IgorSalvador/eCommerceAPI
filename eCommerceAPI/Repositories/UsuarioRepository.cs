@@ -21,41 +21,93 @@ namespace eCommerceAPI.Repositories
 
         public Usuario Get(int id)
         {
-            return _connection.QueryFirstOrDefault<Usuario>("SELECT * FROM Usuarios where Id = @Id", new {Id = id});
+            return _connection.Query<Usuario, Contato, Usuario>("SELECT * FROM Usuarios as U LEFT JOIN Contatos as C ON C.UsuarioId = U.Id WHERE U.Id = @Id", 
+                (usuario, contato) =>
+                {
+                    usuario.Contato = contato;
+                    return usuario;
+                },
+                new {Id = id}).SingleOrDefault();
         }
 
         public void Insert(Usuario usuario)
         {
-            Usuario lastUser = _db.LastOrDefault();
+            _connection.Open();
 
-            if(lastUser == null)
-            {
-                usuario.Id = 1;
-            }
-            else
-            {
-                usuario.Id = lastUser.Id + 1;
-            }
+            //Cria transacao para caso qualquer operacao falhe, elas sao canceladas.
+            IDbTransaction transaction = _connection.BeginTransaction();
 
-            _db.Add(usuario);
+            try
+            {
+                string query = "INSERT INTO Usuarios (Nome, Email, Sexo, RG, CPF, NomeMae, SituacaoCadastro, DataCadastro) VALUES (@Nome, @Email, @Sexo, @RG, @CPF, @NomeMae, @SituacaoCadastro, @DataCadastro); SELECT CAST(SCOPE_IDENTITY() AS INT);";
+                usuario.Id = _connection.Query<int>(query, usuario, transaction).Single();
+
+                if (usuario.Contato != null)
+                {
+                    usuario.Contato.UsuarioId = usuario.Id;
+                    string queryContato = "INSERT INTO Contatos(UsuarioId, Telefone, Celular) VALUES (@UsuarioId, @Telefone, @Celular);SELECT CAST(SCOPE_IDENTITY() AS INT);";
+                    usuario.Contato.Id = _connection.Query<int>(queryContato, usuario.Contato, transaction).Single();
+                }
+
+                transaction.Commit();
+            }
+            catch(Exception)
+            {
+                try
+                {
+                    transaction.Rollback();
+                }
+                catch (Exception)
+                {
+                    throw new Exception("Ocorreu um erro na inserção do usuário, favor verificar!");
+                }
+            }
+            finally
+            {
+                _connection.Close();
+            }
         }
 
         public void Update(Usuario usuario)
         {
-            _db.Remove(_db.FirstOrDefault(u => u.Id == usuario.Id));
-            _db.Add(usuario);
+            _connection.Open();
+
+            //Cria transacao para caso qualquer operacao falhe, elas sao canceladas.
+            IDbTransaction transaction = _connection.BeginTransaction();
+
+            try
+            {
+                string query = "UPDATE Usuarios SET Nome = @Nome, Email = @Email, Sexo = @Sexo, RG = @RG, CPF = @CPF, NomeMae = @NomeMae, SituacaoCadastro = @SituacaoCadastro, DataCadastro = @DataCadastro WHERE Id = @Id";
+                _connection.Execute(query, usuario, transaction);
+
+                if(usuario.Contato != null)
+                {
+                    string queryContato = "UPDATE Contatos SET UsuarioId = @UsuarioId, Telefone = @Telefone, Celular = @Celular WHERE Id = @Id";
+                    _connection.Execute(queryContato, usuario.Contato, transaction);
+                }
+
+                transaction.Commit();
+            }
+            catch (Exception)
+            {
+                try
+                {
+                    transaction.Rollback();
+                }
+                catch (Exception)
+                {
+                    throw new Exception("Ocorreu um erro na atualização do usuário, favor verificar!");
+                }
+            }
+            finally
+            {
+                _connection.Close();
+            }
         }
 
         public void Delete(int id)
         {
-            _db.Remove(_db.FirstOrDefault(u => u.Id == id));
+            _connection.Execute("DELETE FROM Usuarios WHERE Id = @Id", new { Id = id });
         }
-
-        private static List<Usuario> _db = new List<Usuario>()
-        {
-            new Usuario(){ Id = 1, Nome = "Felipe Rodrigues", Email = "felipe.rodrigues@gmail.com"},
-            new Usuario(){ Id = 2, Nome = "Marcelo Rodrigues", Email = "marcelo.rodrigues@gmail.com"},
-            new Usuario(){ Id = 3, Nome = "Jessica Rodrigues", Email = "jessica.rodrigues@gmail.com"}
-        };
     }
 }
