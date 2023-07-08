@@ -181,6 +181,18 @@ namespace eCommerceAPI.Repositories
                     }
                 }
 
+                string queryDeleteUsuarioDepartamento = "DELETE FROM UsuariosDepartamentos WHERE UsuarioId = @Id";
+                _connection.Execute(queryDeleteUsuarioDepartamento, usuario, transaction);
+
+                if (usuario.Departamentos != null && usuario.Departamentos.Any())
+                {
+                    foreach (Departamento departamento in usuario.Departamentos)
+                    {
+                        string queryUsuariosDepartamento = "INSERT INTO UsuariosDepartamentos(UsuarioId, DepartamentoId) VALUES (@UsuarioId, @DepartamentoId)";
+                        _connection.Execute(queryUsuariosDepartamento, new { UsuarioId = usuario.Id, DepartamentoId = departamento.Id }, transaction);
+                    }
+                }
+
                 transaction.Commit();
             }
             catch (Exception)
